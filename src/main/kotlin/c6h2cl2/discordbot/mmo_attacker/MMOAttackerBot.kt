@@ -33,6 +33,9 @@ fun createDiscordClient(token: String): IDiscordClient? {
 
 class OnMessageListener : IListener<MessageReceivedEvent> {
     private var trainingChannnel: IChannel? = null
+    private var mode = BotMode.IDLE
+    private val states = HashMap<String, Any>()
+
     override fun handle(event: MessageReceivedEvent) {
         val message = event.message
         val client = event.client
@@ -43,16 +46,24 @@ class OnMessageListener : IListener<MessageReceivedEvent> {
             when (commands[0]) {
                 "status" -> channel.sendMessage("!!status")
                 "item" -> kotlin.run {
-                    var message = "!!item"
+                    var command = "!!item"
                     if (commands.size != 1) {
                         (1 until commands.size).forEach {
-                            message += " ${commands[it]}"
+                            command += " ${commands[it]}"
                         }
                     }
-                    channel.sendMessage(message)
+                    channel.sendMessage(command)
                 }
                 "attack" -> channel.sendMessage("!!attack")
             }
         }
     }
+
+    private fun train(event: MessageReceivedEvent) {
+
+    }
+}
+
+enum class BotMode {
+    IDLE, TRAINING, LEVELING, KILLING
 }
