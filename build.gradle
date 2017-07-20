@@ -1,0 +1,43 @@
+apply plugin: 'kotlin'
+apply plugin: 'application'
+
+group 'c6h2cl2.discordbot'
+version '1.0.0'
+mainClassName = "c6h2cl2.discordbot.mmo_attacker.MMOAttackerBotKt"
+
+buildscript {
+    ext.kotlin_version = '1.1.3-2'
+    ext.discord4j_version = '2.8.4'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+repositories {
+    mavenCentral()
+    jcenter() //This prevents issues with transitive dependencies
+    maven {
+        url  "https://jitpack.io"
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "com.github.austinv11:Discord4J:$discord4j_version"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+run {
+    if (project.hasProperty('args')) {    // "args" というプロパティが渡されていたら
+        args project.args.split('\\s+')   // 空白文字で split して、 run タスクの args オプションにセットする
+    }
+}
