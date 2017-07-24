@@ -1,69 +1,111 @@
 package c6h2cl2.discordbot.mmo_attacker
 
+import org.json.JSONObject
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.api.events.IListener
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.impl.obj.User
 import sx.blah.discord.handle.obj.IChannel
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.locks.*
+import kotlin.concurrent.timer
+import kotlin.concurrent.withLock
 
 /**
  * @author C6H2Cl2
  */
 
-const val OWNER_ID = 217261423041052672L
+var MAIN_ID = 0L
+var SUB_ID = 0L
+var MMO_ID = 0L
+var MAIN_TOKEN = ""
+var SUB_TOKEN = ""
+val BOT = MMOAttackerBot()
+var bootFlag = true
 
 fun main(args: Array<String>) {
-    val client = createDiscordClient(args[0])!!
-    println("Client Created")
+    val jsonObject = JSONObject(String(Files.readAllBytes(File("token.json").toPath())))
+    val tokens = jsonObject.getJSONObject("tokens")
+    val id = jsonObject.getJSONObject("id")
+    MAIN_TOKEN = tokens.getString("main")
+    SUB_TOKEN = tokens.getString("sub")
+    MAIN_ID = id.getLong("main")
+    SUB_ID = id.getLong("sub")
+    MMO_ID = id.getLong("mmo")
+    createDiscordClient()
+    timer(initialDelay = 1000, period = 1000) {
+        if (!bootFlag) {
+            return@timer
+        }
+        BOT.run()
+    }
+    BOT.mainClient.logout()
+    BOT.subClient.logout()
 }
 
-fun createDiscordClient(token: String): IDiscordClient? {
+fun createDiscordClient() {
     try {
-        val builder = ClientBuilder().withToken(token)
+        var builder = ClientBuilder().withToken(MAIN_TOKEN)
                 .registerListener(OnMessageListener())
         builder.login()
-        println("Listener Registered")
-        return builder.build()
+        BOT.mainClient = builder.build()
+        builder = ClientBuilder().withToken(SUB_TOKEN)
+                .registerListener(OnMessageListener())
+        builder.login()
+        BOT.subClient = builder.build()
     } catch (e: Exception) {
         e.printStackTrace()
-        return null
     }
 }
 
 class OnMessageListener : IListener<MessageReceivedEvent> {
-    private var trainingChannnel: IChannel? = null
-    private var mode = BotMode.IDLE
-    private val states = HashMap<String, Any>()
+
 
     override fun handle(event: MessageReceivedEvent) {
         val message = event.message
+        val id = (message.author as User).longID
+        if (!(id == MAIN_ID || id == SUB_ID || id == MMO_ID)) {
+            return
+        }
         val client = event.client
         val channel = event.channel
-        println("Message Received: $message")
-        if ((message.author as User).longID == OWNER_ID && message.content.startsWith("\$\$")) {
-            val commands = message.content.substring(2).split(' ')
+        val content = message.content
+        if (content.startsWith("""$$""")) {
+            //Command Start
+            val commands = content.substring(2).split(' ')
+            val flag = BOT.flag
             when (commands[0]) {
-                "status" -> channel.sendMessage("!!status")
-                "item" -> kotlin.run {
-                    var command = "!!item"
-                    if (commands.size != 1) {
-                        (1 until commands.size).forEach {
-                            command += " ${commands[it]}"
-                        }
+                "t" -> kotlin.run {
+                    if (id == MAIN_ID) {
+                        BOT.flag = flag or 0b01
+
+                    } else {
+                        BOT.flag = flag or 0b10
                     }
-                    channel.sendMessage(command)
                 }
-                "attack" -> channel.sendMessage("!!attack")
             }
         }
-    }
-
-    private fun train(event: MessageReceivedEvent) {
-
     }
 }
 
 enum class BotMode {
     IDLE, TRAINING, LEVELING, KILLING
+}
+
+class MMOAttackerBot {
+    lateinit var mainClient: IDiscordClient
+    lateinit var subClient: IDiscordClient
+    var mainChannnel: IChannel? = null
+    var subChannnel: IChannel? = null
+    /**
+     * 1:TrainingActive-Main
+     * 2:TrainingActive-Sub
+     */
+    var flag = 0b00
+
+    fun run() {
+
+    }
 }
