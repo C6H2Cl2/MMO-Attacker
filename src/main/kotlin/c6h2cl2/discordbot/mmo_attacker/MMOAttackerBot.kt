@@ -62,7 +62,6 @@ fun createDiscordClient() {
 
 class OnMessageListener : IListener<MessageReceivedEvent> {
 
-
     override fun handle(event: MessageReceivedEvent) {
         val message = event.message
         val id = (message.author as User).longID
@@ -104,8 +103,25 @@ class MMOAttackerBot {
      * 2:TrainingActive-Sub
      */
     var flag = 0b00
+    val quizData = HashMap<String, String>()
+    
+    init{
+        val file = File("training.json")
+        if(file.exists()){
+            val jsonObject = JSONObjet(String(Files.readAllBytes(file.toPath())))
+            val quizJson = jsonObject.getJSONOArray("quiz")
+            (0 until quizeData.length()).forEach{
+                val data = quizeJson.getJSONObject(it)
+                quizData.put(data.getString("key"), data.getString("value"))
+            }
+        } else {
+            file.createNewFile()
+        }
+    }
 
     fun run() {
-
+        if((flag and 0b01) == 0b01){
+            
+        }
     }
 }
